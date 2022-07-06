@@ -4,7 +4,7 @@ Note: Using https://huggingface.co/markussagen/xlm-roberta-longformer-base-4096 
 
 
 # Instructions to (attempt to) run script for multilingual setup:
-a small part of our data can be accessed [here](https://drive.google.com/file/d/1jdx3Itowup8Y9WuJ6EfYtv0hINzQGwCl/view?usp=sharing). Please uncompress the folder outstude the histruct-multilingual directory
+A small part of our data can be accessed [here](https://drive.google.com/file/d/1jdx3Itowup8Y9WuJ6EfYtv0hINzQGwCl/view?usp=sharing). Please uncompress the folder outstude the histruct-multilingual directory.
 - Run these 2 steps additionally in your histruct conda env:
 1. pip3 install indic-nlp-library
 2. pip3 install --upgrade protobuf==3.20.0
