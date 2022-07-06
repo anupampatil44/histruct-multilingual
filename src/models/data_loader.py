@@ -258,9 +258,12 @@ class DataIterator(object):
             pre_section_names=ex['section_names']
         else:
             pre_section_names=None
-            
+        
+        # print("pre_section_names:",pre_section_names)
         #convert section names into numeric (its index in the embeddings file)
         section_names=[]
+        # print("sn",self.sn)
+        self.sn=[x.lower().strip() for x in self.sn]
         if pre_section_names is not None:
             if self.args.section_names_embed_path!='':
                 for n in pre_section_names: 
@@ -444,3 +447,4 @@ class TextDataloader(object):
 
                 yield batch
             return
+

@@ -175,7 +175,7 @@ def obtain_histruct_info(doc, args, tokenizer):
     if sent_struct_vec==[]:
         logger.info('Skipped since the sentence structure vector is empty')
         skip=True
-        skip_reason='empty sentence structure vector '
+        skip_reason='empty sentence structure vector'
         
     if not args.obtain_tok_se:
         token_struct_vec=None

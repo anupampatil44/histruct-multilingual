@@ -119,7 +119,7 @@ TRAIN_STEPS = 100000
 #learning rate, default 2e-3
 LR = 2e-3
 #GPUs used
-VISIBLE_GPUS = 0,1,2
+VISIBLE_GPUS = [0] #0,1,2
 if VISIBLE_GPUS != -1:
     os.environ["CUDA_VISIBLE_DEVICES"] = str(VISIBLE_GPUS)
 

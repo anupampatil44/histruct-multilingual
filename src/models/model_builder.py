@@ -6,7 +6,7 @@ from pytorch_transformers import BertModel, BertConfig
 from transformers import BertModel as BertModelT
 from transformers import RobertaModel
 from transformers import BartModel
-from transformers import LongformerModel,LongformerConfig
+from transformers import LongformerModel,LongformerConfig,AutoModel, AutoTokenizer,AutoConfig
 from transformers import PegasusTokenizer, BigBirdPegasusModel
 from transformers.models.bigbird_pegasus.modeling_bigbird_pegasus import BigBirdPegasusLearnedPositionalEmbedding
 from transformers.models.bart.modeling_bart import BartLearnedPositionalEmbedding
@@ -177,11 +177,11 @@ class BertT(nn.Module):
 class Roberta(nn.Module):
     def __init__(self, base_LM, temp_dir, finetune):
         super(Roberta, self).__init__()
-        self.model = RobertaModel.from_pretrained(base_LM, cache_dir=temp_dir)
+        self.model = AutoModel.from_pretrained('markussagen/'+base_LM, cache_dir=temp_dir)
         
         self.finetune = finetune
 
-    def forward(self, x,  mask):
+    def forward(self, x,  mask,**kwargs):
         #position_ids
         seq_length = x.size(1)
         position_ids = torch.arange(seq_length, dtype=torch.long, device=x.device)     
@@ -198,14 +198,14 @@ class Longformer(nn.Module):
     def __init__(self, args):
         super(Longformer, self).__init__()
         
-        config = LongformerConfig.from_pretrained('allenai/'+args.base_LM) 
+        config = AutoConfig.from_pretrained('markussagen/'+args.base_LM) 
         config.attention_window=args.local_attention_window
 
-        self.model = LongformerModel.from_pretrained('allenai/'+args.base_LM, cache_dir=args.temp_dir,config=config)      
+        self.model = AutoModel.from_pretrained('markussagen/'+args.base_LM, cache_dir=args.temp_dir,config=config)      
         self.finetune = args.finetune_bert
         self.use_global_attention = args.use_global_attention
 
-    def forward(self, x, mask, clss):
+    def forward(self, x, mask, clss,**kwargs):
         #position_ids
         seq_length = x.size(1)
         position_ids = torch.arange(seq_length, dtype=torch.long, device=x.device)     
@@ -245,7 +245,6 @@ class Bart(nn.Module):
         
         self.args=args
         config = BartModel.from_pretrained('facebook/'+args.base_LM, cache_dir=args.temp_dir).config
-        
 
         
         if not args.is_encoder_decoder:
@@ -259,7 +258,7 @@ class Bart(nn.Module):
         
         self.finetune = args.finetune_bert
 
-    def forward(self, x, mask):
+    def forward(self, x, mask,**kwargs):
         
         if(self.finetune):
             
@@ -305,7 +304,7 @@ class BigBirdPegasus(nn.Module):
         
         self.finetune = args.finetune_bert
 
-    def forward(self, x, mask):
+    def forward(self, x, mask,**kwargs):
         
         if(self.finetune):
             
@@ -340,7 +339,7 @@ class MyPooler(nn.Module):
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         self.activation = nn.Tanh()
 
-    def forward(self, hidden_states):
+    def forward(self, hidden_states,**kwargs):
         # We "pool" the model by simply taking the hidden state corresponding
         # to the first token.
         first_token_tensor = hidden_states[:, 0]
@@ -351,6 +350,7 @@ class MyPooler(nn.Module):
 class ExtSummarizer(nn.Module):
     def __init__(self, args, device, checkpoint):
         super(ExtSummarizer, self).__init__()
+        print('init!!!! ExtSummarizer')
         self.args = args
         self.device = device
         
@@ -390,9 +390,10 @@ class ExtSummarizer(nn.Module):
             if (args.base_LM.startswith('bert')):
                 self.bert = BertT(args.base_LM, args.temp_dir, args.finetune_bert)
 
-            elif (args.base_LM.startswith('roberta')):
+            elif (args.base_LM.startswith('xlm-roberta')):
+                print('else init roberta')
                 self.bert = Roberta(args.base_LM, args.temp_dir, args.finetune_bert)
-            elif (args.base_LM.startswith('longformer')):
+            elif (args.base_LM.startswith('xlm-roberta-longformer')):
                 self.bert = Longformer(args)
             elif (args.base_LM.startswith('bigbird-pegasus')):
                 self.bert = BigBirdPegasus(args)
@@ -407,7 +408,7 @@ class ExtSummarizer(nn.Module):
            
         self.ext_layer = ExtTransformerEncoder(self.bert.model,args, self.bert.model.config.hidden_size, args.ext_ff_size, args.ext_heads,
                                                args.ext_dropout, args.ext_layers)
-        
+        print('arg.encoder:',args.encoder)
         if (args.encoder == 'baseline'):
             bert_config = BertConfig(self.bert.model.config.vocab_size, hidden_size=args.ext_hidden_size,
                                      num_hidden_layers=args.ext_layers, num_attention_heads=args.ext_heads, intermediate_size=args.ext_ff_size)
@@ -422,21 +423,23 @@ class ExtSummarizer(nn.Module):
             self.bert.model.embeddings.position_embeddings = my_pos_embeddings
             
         if(args.base_LM.startswith('roberta') and args.max_pos>514):
-
+            print('inside roberta')
             my_pos_embeddings = nn.Embedding(args.max_pos, self.bert.model.config.hidden_size)
             my_pos_embeddings.weight.data[:514] = self.bert.model.embeddings.position_embeddings.weight.data
             my_pos_embeddings.weight.data[514:] = self.bert.model.embeddings.position_embeddings.weight.data[-1][None,:].repeat(args.max_pos-514,1)
             self.bert.model.embeddings.position_embeddings = my_pos_embeddings
         
-        if(args.base_LM.startswith('longformer') and args.max_pos>4098):
+        if(args.base_LM.startswith('xlm-roberta-longformer') and args.max_pos>4098):
 
+            print('inside longformer1')
             my_pos_embeddings = nn.Embedding(args.max_pos, self.bert.model.config.hidden_size)
             my_pos_embeddings.weight.data[:4098] = self.bert.model.embeddings.position_embeddings.weight.data
             my_pos_embeddings.weight.data[4098:] = self.bert.model.embeddings.position_embeddings.weight.data[-1][None,:].repeat(args.max_pos-4098,1)
             self.bert.model.embeddings.position_embeddings = my_pos_embeddings
             
-        if(args.base_LM.startswith('longformer') and args.max_pos<4098):
+        if(args.base_LM.startswith('xlm-roberta-longformer') and args.max_pos<4098):
 
+            print('inside longformer2')
             my_pos_embeddings = nn.Embedding(args.max_pos, self.bert.model.config.hidden_size)
             my_pos_embeddings.weight.data = self.bert.model.embeddings.position_embeddings.weight.data[:args.max_pos]
             self.bert.model.embeddings.position_embeddings = my_pos_embeddings
@@ -495,19 +498,23 @@ class ExtSummarizer(nn.Module):
 
         self.to(device)
 
-    def forward(self, src, segs, clss, mask_src, mask_cls,sent_struct_vec,tok_struct_vec, section_names):#
+    def forward(self, src, segs, clss, mask_src, mask_cls,sent_struct_vec,tok_struct_vec, section_names,**kwargs):#
         if (self.args.base_LM.startswith('bert')): #need segs
             if (self.args.add_tok_struct_emb):
-                top_vec = self.bert(src, segs, mask_src, tok_struct_vec)
+              try:
+                top_vec = self.bert(src, segs, mask_src, tok_struct_vec,**kwargs)
+              except:
+                top_vec = self.bert(src, segs, mask_src,**kwargs)
+                pass
             else: 
-                top_vec = self.bert(src, segs, mask_src)
+                top_vec = self.bert(src, segs, mask_src,**kwargs)
         else:
             if (self.args.add_tok_struct_emb):
                 logger.info('add_tok_struct_emb is not implemented for the base model %s, please set -add_tok_struct_emb false'%self.args.base_LM)
                 exit()
             else: 
-                if self.args.base_LM.startswith('longformer'): #need clss
-                    top_vec = self.bert(src, mask_src, clss)
+                if self.args.base_LM.startswith('xlm-roberta-longformer'): #need clss
+                    top_vec = self.bert(src, mask_src) #runs after running clss parameter, otherwise gives the error: "foward() takes 3 positional arguments but 4 were given" 
                 else:
                     top_vec = self.bert(src, mask_src)
         sents_vec = top_vec[torch.arange(top_vec.size(0)).unsqueeze(1), clss]

@@ -220,16 +220,19 @@ class SINTokInputEmb(nn.Module):
 class LPTokInputEmb(nn.Module):
     def __init__(self, config,args):
         super(LPTokInputEmb, self).__init__()
-        
-        self.args=args
-        
-        self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size, padding_idx=0)
-        self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size)
-        self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size)
-        
-        
-        self.LayerNorm = BertLayerNorm(config.hidden_size, eps=config.layer_norm_eps)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        try:
+            self.args=args
+
+            self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size, padding_idx=0)
+            self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size)
+            self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size)
+
+
+            self.LayerNorm = BertLayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+            self.dropout = nn.Dropout(config.hidden_dropout_prob)
+
+        except Exception as e:
+            print(e)
 
     def forward(
         self,

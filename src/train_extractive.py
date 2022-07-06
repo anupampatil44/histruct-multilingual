@@ -432,9 +432,10 @@ def baseline_ext(args, cal_lead=False, cal_oracle=False):
 
 def train_ext(args, device_id):
     #check if the model already exists
-    #create save folder if not exisits
+    #create save folder if not exists
     if not os.path.exists(args.model_path):
-        os.mkdir(args.model_path)
+        print('in train_ext this wierd path doesn\'t exist')
+        os.system('mkdir -p ' + str(os.getcwd()) + '/' + str(args.model_path))
         logger.info('Model folder created.')
     else:
         if len(os.listdir(args.model_path))!= 0:
