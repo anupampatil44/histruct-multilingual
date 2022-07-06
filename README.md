@@ -9,7 +9,7 @@ A small part of our data can be accessed [here](https://drive.google.com/file/d/
 1. pip3 install indic-nlp-library
 2. pip3 install --upgrade protobuf==3.20.0
 
-## For preprocessing, Run the following commands externally in your terminal for preprocessing the data:<br>
+## For preprocessing, run the following commands externally in your terminal for preprocessing the data:<br>
 (train test and val sets should be present as .txt files)
 
 1) python3 histruct-multilingual/src/preprocess_wiki.py -mode merge_data_splits -dataset wiki -raw_path data_hiwiki/data_hiwiki_raw -save_path data_hiwiki/data_hiwiki_splitted/hiwiki  -log_file data_hiwiki/hiwiki_prepro_merge_data_splits.log
